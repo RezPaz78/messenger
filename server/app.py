@@ -1,6 +1,9 @@
 from flask import Flask, request,jsonify
 from flask_socketio import SocketIO,emit
 from flask_cors import CORS
+import time
+import ray
+import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -13,18 +16,58 @@ def http_call():
     data = {'data':'This text was fetched using an HTTP call to server on render'}
     return jsonify(data)
 
+#######################################################################################
+
 @socketio.on("connect")
 def connected():
     """event listener when client connects to the server"""
     print(request.sid)
     print("client has connected")
     emit("connect",{"data":f"id: {request.sid} is connected"})
-
+######################################################################################
+    
 @socketio.on('data')
 def handle_message(data):
     """event listener when client types a message"""
     print("data from the front end: ",str(data))
-    emit("data",{'data':data,'id':request.sid},broadcast=True)
+    #emit("data",{'data':data,'id':request.sid},broadcast=True)
+    # filter
+    ray.init()
+    @ray.remote
+    class MessageActor(object):
+        def __init__(self):
+            self.messages = []
+            self.messages = data
+        def add_message(self, message):
+            self.messages.append(message)
+
+        def filter_words(self, message):
+            Data = json.loads(data)
+            if "iran" in Data:
+                print("filter iran")
+                Data.pop(data)
+    
+        def get_and_clear_messages(self):
+            messages = self.messages
+            self.messages = []
+            return messages
+
+    @ray.remote
+    def worker(message_actor, j):
+        for i in range(50):
+            time.sleep(1)
+            message_actor.add_message.remote(
+                #"Message {} from client {}.".format(i, j))
+                 emit("data",{'data':data,'id':request.sid},broadcast=True))
+
+    message_actor = MessageActor.remote()
+    [worker.remote(message_actor, j) for j in range(request.sid)]
+    for _ in range(50):
+        new_messages = ray.get(message_actor.filter_words.remote())
+        print("message deleted")
+        #print("New messages:", new_messages)
+        time.sleep(1)
+
 
 @socketio.on("disconnect")
 def disconnected():
@@ -32,5 +75,9 @@ def disconnected():
     print("user disconnected")
     emit("disconnect",f"user {request.sid} disconnected",broadcast=True)
 
+
+
+
 if __name__ == '__main__':
     socketio.run(app, debug=True,port=5001)
+
