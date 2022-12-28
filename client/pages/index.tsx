@@ -1,21 +1,34 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useState } from "react";
-import io from "socket.io-client";
-
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { useUser } from "../context/userContext";
+// import { io } from "socket.io-client";
 export default function Home() {
-	const socket = io.connect("http://localhost:4000");
+	// const socket = io("http://localhost:5001");
 	const router = useRouter();
 	const [username, setUsername] = useState("");
 	const [room, setRoom] = useState("");
+	const [user, dispatch] = useUser();
 
 	const joinRoom = () => {
-		if (room !== "" && username !== "") {
-			socket.emit("join_room", { username, room });
-			router.replace("/chat");
-		}
-		// TODO: handle else
+		username === ""
+			? toast.error("Please Enter a Username !!")
+			: room === ""
+			? toast.error("Please Choose a ChatRoom !!")
+			: dispatch({ type: "SET", payload: { name: username, room } });
 	};
+
+	useEffect(() => {
+		user.name !== "" && router.replace("/chat");
+	}, [router, user.name]);
+
+	useEffect(() => {
+		localStorage.setItem(
+			"messengerUser",
+			JSON.stringify({ name: "", room: "" })
+		);
+	}, []);
 
 	return (
 		<>
@@ -28,18 +41,18 @@ export default function Home() {
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<link rel="icon" href="/favicon.ico" />
 			</Head>
-			<main className="h-full w-full bg-black flex items-center justify-center">
+			<main className="h-screen w-full flex items-center justify-center">
 				<div className="pt-8 bg-white pb-10 px-10 border flex flex-col items-center border-gray-500 rounded-lg">
-					<h1 className="font-bold text-lg mb-5 dark:text-white">{`Welcome to Messenger`}</h1>
+					<h1 className="font-bold text-lg mb-5">{`Welcome to Messenger`}</h1>
 
 					<input
 						className="border w-full text-center focus:outline-none py-2 border-gray-500 rounded"
 						placeholder="Enter a username"
-						onChange={e => setUsername(e.target.value)}
+						onChange={(e) => setUsername(e.target.value)}
 					/>
 
 					<select
-						onChange={e => setRoom(e.target.value)}
+						onChange={(e) => setRoom(e.target.value)}
 						className="mt-5 w-full focus:outline-none border border-gray-500 text-center rounded py-1"
 					>
 						<option>-- Select Room --</option>
