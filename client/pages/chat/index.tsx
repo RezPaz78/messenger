@@ -1,15 +1,16 @@
 import Head from "next/head";
-import { useUser } from "../../context/userContext";
 import { useEffect, useState } from "react";
-import { UserState } from "../../types/user";
+import { UserState } from "../../types/user.types";
 import { Logout, Send } from "iconsax-react";
 import { useRouter } from "next/router";
+import Messages from "./components/Messages.page";
+import { useSocket } from "../../context/socket/socketContext";
 
 const Chat = () => {
-	const [user, dispatch] = useUser();
 	const [lsUser, setLsUser] = useState<UserState>();
 	const [message, setMessage] = useState<string>("");
 	const router = useRouter();
+	const [socket] = useSocket();
 
 	useEffect(() => {
 		const userData = localStorage.getItem("messengerUser");
@@ -18,7 +19,6 @@ const Chat = () => {
 
 	const logoutHandler = () => {
 		localStorage.clear();
-		dispatch({ type: "UNSET" });
 		router.replace("/");
 	};
 
@@ -35,22 +35,14 @@ const Chat = () => {
 			</Head>
 			<main className="h-screen bg-[#EFF5F5] relative">
 				{/* Navbar */}
-				{user.name !== "" ? (
+				{lsUser && (
 					<nav className="flex bg-[#497174] px-3 text-white h-14 w-full fixed top-0 items-center justify-between">
 						<Logout onClick={logoutHandler} />
-						<span className="font-bold text-lg">{user.room.toUpperCase()}</span>
-						<span>{user.name}</span>
+						<span className="font-bold text-lg">
+							{lsUser.room.toUpperCase()}
+						</span>
+						<span>{lsUser.name}</span>
 					</nav>
-				) : (
-					lsUser && (
-						<nav className="flex bg-[#497174] px-3 text-white h-14 w-full fixed top-0 items-center justify-between">
-							<Logout onClick={logoutHandler} />
-							<span className="font-bold text-lg">
-								{lsUser.room.toUpperCase()}
-							</span>
-							<span>{lsUser.name}</span>
-						</nav>
-					)
 				)}
 
 				{/* Messages */}
@@ -58,6 +50,7 @@ const Chat = () => {
 				<section className="pt-20 px-5">
 					<span>{message}</span>
 				</section>
+				<Messages socket={socket} />
 
 				{/* Input Field */}
 				<div className="absolute bottom-0 w-full">

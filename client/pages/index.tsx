@@ -2,26 +2,22 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { useUser } from "../context/userContext";
-// import { io } from "socket.io-client";
+import { io } from "socket.io-client";
+import { useSocket } from "../context/socket/socketContext";
 export default function Home() {
-	// const socket = io("http://localhost:5001");
+	const initialSocket = io("http://localhost:5001");
 	const router = useRouter();
 	const [username, setUsername] = useState("");
 	const [room, setRoom] = useState("");
-	const [user, dispatch] = useUser();
+	const [socket, dispatch] = useSocket();
 
 	const joinRoom = () => {
 		username === ""
 			? toast.error("Please Enter a Username !!")
 			: room === ""
 			? toast.error("Please Choose a ChatRoom !!")
-			: dispatch({ type: "SET", payload: { name: username, room } });
+			: joinRoomHandler();
 	};
-
-	useEffect(() => {
-		user.name !== "" && router.replace("/chat");
-	}, [router, user.name]);
 
 	useEffect(() => {
 		localStorage.setItem(
@@ -29,6 +25,19 @@ export default function Home() {
 			JSON.stringify({ name: "", room: "" })
 		);
 	}, []);
+
+	useEffect(() => {
+		dispatch({ type: "SET", payload: { socket: initialSocket } });
+	}, [dispatch, initialSocket]);
+
+	const joinRoomHandler = () => {
+		localStorage.setItem(
+			"messegerUser",
+			JSON.stringify({ name: username, room: room })
+		);
+		socket.socket?.emit("join_room", { username, room });
+		router.replace("/chat");
+	};
 
 	return (
 		<>

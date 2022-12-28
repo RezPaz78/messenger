@@ -1,4 +1,4 @@
-import { UserState, UserAction } from "../types/user";
+import { UserState, UserAction } from "../../types/user.types";
 
 const UserReducer: React.Reducer<UserState, UserAction> = (state, action) => {
 	switch (action.type) {

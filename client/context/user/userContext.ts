@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import { UserState, UserAction } from "../types/user";
+import { UserState, UserAction } from "../../types/user.types";
 
 export const fallbackUser: UserState = {
 	name: "",
