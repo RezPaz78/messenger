@@ -4,6 +4,7 @@ from flask_cors import CORS
 import time
 import ray
 import json
+import threading
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -30,45 +31,13 @@ def connected():
 def handle_message(data):
     """event listener when client types a message"""
     print("data from the front end: ",str(data))
-    #emit("data",{'data':data,'id':request.sid},broadcast=True)
-    # filter
-    ray.init()
-    @ray.remote
-    class MessageActor(object):
-        def __init__(self):
-            self.messages = []
-            self.messages = data
-        def add_message(self, message):
-            self.messages.append(message)
-
-        def filter_words(self, message):
-            Data = json.loads(data)
-            if "iran" in Data:
+    #data1= json.loads(data)
+    if "iran" in data:
                 print("filter iran")
-                Data.pop(data)
+                #Data.pop(data)
+                data= "error"
+    emit("data",{'data':data,'id':request.sid},broadcast=True)
     
-        def get_and_clear_messages(self):
-            messages = self.messages
-            self.messages = []
-            return messages
-
-    @ray.remote
-    def worker(message_actor, j):
-        for i in range(50):
-            time.sleep(1)
-            message_actor.add_message.remote(
-                #"Message {} from client {}.".format(i, j))
-                 emit("data",{'data':data,'id':request.sid},broadcast=True))
-
-    message_actor = MessageActor.remote()
-    [worker.remote(message_actor, j) for j in range(request.sid)]
-    for _ in range(50):
-        new_messages = ray.get(message_actor.filter_words.remote())
-        print("message deleted")
-        #print("New messages:", new_messages)
-        time.sleep(1)
-
-
 @socketio.on("disconnect")
 def disconnected():
     """event listener when client disconnects to the server"""
@@ -80,4 +49,3 @@ def disconnected():
 
 if __name__ == '__main__':
     socketio.run(app, debug=True,port=5001)
-
